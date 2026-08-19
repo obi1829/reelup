@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <radialGradient id="bgGrad" cx="30%" cy="24%" r="85%">
+      <stop offset="0%" stop-color="#7fb2ff"/>
+      <stop offset="45%" stop-color="#3f74e0"/>
+      <stop offset="100%" stop-color="#173f9e"/>
+    </radialGradient>
+    <filter id="softShadow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="10" stdDeviation="16" flood-color="#08123a" flood-opacity="0.35"/>
+    </filter>
+    <filter id="cardShadow" x="-60%" y="-60%" width="220%" height="220%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#08123a" flood-opacity="0.4"/>
+    </filter>
+    <clipPath id="photoClip">
+      <rect x="147" y="117" width="218" height="240" rx="10"/>
+    </clipPath>
+  </defs>
+
+  <!-- Rounded-square field, holds contrast on any surface -->
+  <rect x="8" y="8" width="496" height="496" rx="116" fill="url(#bgGrad)" filter="url(#softShadow)"/>
+  <rect x="9" y="9" width="494" height="494" rx="115" fill="none" stroke="#a9cbff" stroke-width="2" opacity="0.5"/>
+
+  <!-- Single photo: one clear shape, legible even at 16px -->
+  <g filter="url(#cardShadow)" transform="rotate(-6 256 256)">
+    <rect x="121" y="91" width="270" height="330" rx="26" fill="#ffffff"/>
+    <rect x="147" y="117" width="218" height="240" rx="10" fill="#cfe4ff"/>
+    <g clip-path="url(#photoClip)">
+      <circle cx="186" cy="160" r="20" fill="#ffffff"/>
+      <path d="M147 358 L222 224 L297 358 Z" fill="#6ea6ff"/>
+      <path d="M258 358 L320 269 L365 358 Z" fill="#2f5fd0"/>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" data-palette="midnight">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!--
+  script-src has no 'unsafe-inline': every interactive element is wired via
+  addEventListener in renderer/init.js instead of onclick="..." attributes,
+  and the theme-preload script is an external file — nothing here executes
+  as inline script. This CSP blocks remote script/style injection, eval,
+  plugins, and any network call the renderer might try to make on its own
+  (connect-src 'self' only — all real HTTP/SFTP/WebDAV traffic happens in
+  the main process, not here).
+-->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: localfile: blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none';">
+<title>ReelUp</title>
+<link rel="stylesheet" href="styles.css">
+<script src="renderer/theme-preload.js"></script>
+</head>
+<body>
+
+<!-- Titlebar -->
+<div class="titlebar">
+  <div class="titlebar-left">
+    <button class="titlebar-btn" id="hamburgerBtn" title="Menu" aria-label="Open menu">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+    </button>
+    <div class="titlebar-brand">
+      <div class="app-logo">
+        <svg viewBox="0 0 24 24">
+          <defs><linearGradient id="rlLogoTb" x1="15%" y1="10%" x2="85%" y2="95%"><stop offset="0%" stop-color="#7fb2ff"/><stop offset="100%" stop-color="#1d4fb8"/></linearGradient></defs>
+          <rect width="24" height="24" rx="6" fill="url(#rlLogoTb)"/>
+          <rect x="6.5" y="5" width="12" height="14" rx="2" fill="#fff"/>
+          <rect x="7.7" y="6.2" width="9.6" height="10.6" rx="1" fill="#cfe4ff"/>
+          <circle cx="9.8" cy="8.1" r="1" fill="#fff"/>
+          <path d="M7.7 15.4L11.2 10.6L13.5 13.6Z" fill="#6ea6ff"/>
+          <path d="M12.3 15.4L14.9 11.7L17.3 15.4Z" fill="#2f5fd0"/>
+        </svg>
+      </div>
+      <span class="app-title">ReelUp</span>
+    </div>
+  </div>
+  <div class="titlebar-right">
+    <button class="titlebar-btn" id="settingsBtn" title="Settings" aria-label="Open settings">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94 0 .31.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+    </button>
+    <div class="titlebar-divider"></div>
+    <button class="titlebar-btn window" id="winMinimizeBtn" title="Minimize">
+      <svg width="10" height="2" viewBox="0 0 10 2" fill="currentColor"><rect width="10" height="2" rx="1"/></svg>
+    </button>
+    <button class="titlebar-btn window" id="winMaximizeBtn" title="Maximize">
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5"><rect x=".75" y=".75" width="8.5" height="8.5" rx="1.5"/></svg>
+    </button>
+    <button class="titlebar-btn window close" id="winCloseBtn" title="Close">
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 1l8 8M9 1L1 9"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- First-launch onboarding (below titlebar, blocks main UI until complete) -->
+<div id="onboardingOverlay" class="onboarding-overlay" hidden aria-hidden="true">
+  <div class="onboarding-inner">
+    <div class="onboarding-step is-active" data-onboard-step="1" role="region" aria-label="Welcome">
+      <div class="onboarding-logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+          <defs><linearGradient id="rlLogoOb" x1="15%" y1="10%" x2="85%" y2="95%"><stop offset="0%" stop-color="#7fb2ff"/><stop offset="100%" stop-color="#1d4fb8"/></linearGradient></defs>
+          <rect width="24" height="24" rx="6" fill="url(#rlLogoOb)"/>
+          <rect x="6.5" y="5" width="12" height="14" rx="2" fill="#fff"/>
+          <rect x="7.7" y="6.2" width="9.6" height="10.6" rx="1" fill="#cfe4ff"/>
+          <circle cx="9.8" cy="8.1" r="1" fill="#fff"/>
+          <path d="M7.7 15.4L11.2 10.6L13.5 13.6Z" fill="#6ea6ff"/>
+          <path d="M12.3 15.4L14.9 11.7L17.3 15.4Z" fill="#2f5fd0"/>
+        </svg>
+      </div>
+      <h1 class="onboarding-title">Welcome to ReelUp</h1>
+      <p class="onboarding-subtitle">The fastest way to get photos from your SD card to where they belong</p>
+      <p class="onboarding-formats">JPG · HEIC · RAW · NEF · ARW · CR2 · DNG · MP4 · MOV</p>
+      <button type="button" class="btn btn-primary onboarding-cta" id="onboardingStep1CtaBtn">
+        Get Started →
+      </button>
+    </div>
+
+    <div class="onboarding-step" data-onboard-step="2" role="region" aria-label="Choose destination">
+      <h2 class="onboarding-h2">Where do you want to send your photos?</h2>
+      <div class="onboarding-dest-grid">
+        <button type="button" class="onboarding-dest-card" id="onboardingDestImmichBtn">
+          <span class="onboarding-dest-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg></span>
+          <span class="onboarding-dest-name">Immich API</span>
+          <span class="onboarding-dest-desc">Self-hosted Immich server</span>
+          <span class="onboarding-dest-hint">Perfect for Homu/NAS setups</span>
+          <span class="btn btn-primary onboarding-dest-btn">Configure Immich</span>
+        </button>
+        <button type="button" class="onboarding-dest-card" id="onboardingDestSftpBtn">
+          <span class="onboarding-dest-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 6h-2.18c.11-.31.18-.65.18-1a2.996 2.996 0 0 0-5.5-1.65l-.5.67-.5-.68C11.01 2.51 10.03 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2z"/></svg></span>
+          <span class="onboarding-dest-name">Network Folder (SFTP)</span>
+          <span class="onboarding-dest-desc">Copy to a folder on your server</span>
+          <span class="onboarding-dest-hint">Organizes by date automatically</span>
+          <span class="btn btn-primary onboarding-dest-btn">Configure SFTP</span>
+        </button>
+      </div>
+      <div class="onboarding-alt-row">
+        <button type="button" class="onboarding-alt-chip" id="onboardingAltNextcloudBtn">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+          Nextcloud
+        </button>
+        <button type="button" class="onboarding-alt-chip" id="onboardingAltDropboxBtn">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M6 2l6 3.75L18 2 24 5.75 18 9.5l-6-3.5L6 9.5 0 5.75zm12 10.25L24 16 18 19.75 12 16.25 6 20 0 16.25l6-3.5 6 3.5 6-3.75z"/></svg>
+          Dropbox
+        </button>
+        <button type="button" class="onboarding-alt-chip" id="onboardingAltLocalBtn">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M20 18c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z"/></svg>
+          Local folder
+        </button>
+      </div>
+      <div class="onboarding-step2-actions">
+        <button type="button" class="btn btn-primary" id="onboardingStep2ContinueBtn">Continue →</button>
+        <button type="button" class="onboarding-skip-link" id="onboardingStep2SkipBtn">I'll configure this later</button>
+      </div>
+    </div>
+
+    <div class="onboarding-step" data-onboard-step="3" role="region" aria-label="All set">
+      <div class="onboarding-check-wrap" aria-hidden="true">
+        <svg class="onboarding-check-ring" viewBox="0 0 64 64">
+          <circle class="onboarding-check-circle" cx="32" cy="32" r="28" fill="none" stroke="currentColor" stroke-width="3"/>
+          <path class="onboarding-check-mark" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M18 34l10 10 18-22"/>
+        </svg>
+      </div>
+      <h2 class="onboarding-h2 onboarding-ready-title">All set!</h2>
+      <div class="onboarding-summary" id="onboardingSummary"></div>
+      <button type="button" class="btn btn-primary onboarding-cta" id="onboardingCompleteBtn">
+        Start Importing Photos
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- App body -->
+<div class="app-body">
+
+  <!-- UPLOAD PANEL -->
+  <div class="panel active" id="panel-upload">
+    <div class="upload-layout">
+
+      <!-- Left sidebar -->
+      <div class="upload-left">
+
+        <!-- Drop zone -->
+        <div class="drop-zone" id="dropZone">
+          <div class="drop-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg>
+          </div>
+          <h3>Select Source Folder</h3>
+          <p>Click to browse or drag & drop</p>
+          <p style="margin-top:4px; color: var(--accent); font-size:10px;">SD card / DCIM / any folder</p>
+        </div>
+
+        <!-- Folder info -->
+        <div class="folder-info" id="folderInfo">
+          <div class="folder-path" id="folderPath">—</div>
+          <div class="folder-stats">
+            <div class="folder-stat"><span id="fileCount">0</span> selected</div>
+            <div class="folder-stat">of <span id="totalCount">0</span></div>
+            <div class="folder-stat"><span id="totalSize">0 MB</span></div>
+          </div>
+        </div>
+
+        <!-- Upload destination -->
+        <div class="mode-switch-wrap">
+          <div class="mode-switch-label">
+            <span>Upload To</span>
+            <a id="modeConfigureLink">Configure</a>
+          </div>
+          <div class="upload-dest-grid" id="uploadDestGrid" role="tablist" aria-label="Upload destination">
+            <!-- Filled by renderUploadDestinationButtons() -->
+          </div>
+          <div class="upload-dest-empty" id="uploadDestEmpty" hidden>
+            <a href="#" id="uploadDestEmptyLink">Configure a service →</a>
+          </div>
+        </div>
+
+        <!-- Options -->
+        <div class="upload-options">
+          <div class="option-row">
+            <div class="option-label">
+              <strong>Parallel uploads</strong>
+              Simultaneous connections
+            </div>
+            <input type="number" class="num-input" id="concurrency" value="4" min="1" max="10">
+          </div>
+          <div class="option-row option-row-delete">
+            <div class="option-label">
+              <strong>Delete after upload</strong>
+              Remove files if successful
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="deleteAfterUpload">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="upload-left-fill">
+        <div class="summary-card" id="summaryCard">
+          <div class="summary-card-title">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.11 0-2 .89-2 2v14c0 1.11.89 2 2 2h14c1.11 0 2-.89 2-2V5c0-1.11-.89-2-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+            Upload Summary
+          </div>
+          <div class="summary-row">
+            <span class="label">Files</span>
+            <span class="value" id="summaryFiles">—</span>
+          </div>
+          <div class="summary-row">
+            <span class="label">Total size</span>
+            <span class="value" id="summarySize">—</span>
+          </div>
+          <div class="summary-row summary-types-row">
+            <span class="label">Types</span>
+            <span class="value summary-types" id="summaryTypes">—</span>
+          </div>
+          <div class="summary-row" id="summaryTimeRow" hidden>
+            <span class="label" id="summaryTimeLabel">Est. remaining</span>
+            <span class="value" id="summaryTime">—</span>
+          </div>
+        </div>
+        </div>
+
+        <!-- Upload button -->
+        <div class="upload-btn-wrap">
+          <button class="btn btn-primary" id="uploadBtn" disabled>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
+            <span class="btn-label">Upload 0 photos</span>
+          </button>
+          <button class="btn btn-danger" id="abortBtn" style="display:none; margin-top:8px;">
+            Stop Upload
+          </button>
+        </div>
+
+        <div id="tileErrorPopover" class="tile-error-popover" hidden role="alert"></div>
+
+      </div>
+
+      <!-- Right - photos grid + activity log -->
+      <div class="upload-right">
+
+        <div class="resume-banner" id="resumeBanner" role="status" aria-live="polite">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+          <div class="resume-banner-main">
+            <div class="resume-banner-title">Incomplete SFTP upload</div>
+            <div class="resume-banner-text" id="resumeBannerText"></div>
+          </div>
+          <div class="resume-banner-actions">
+            <button type="button" class="btn-resume" id="resumeBannerBtn">Resume</button>
+            <button type="button" class="btn-dismiss" id="resumeDismissBtn">Dismiss</button>
+          </div>
+        </div>
+
+        <div class="log-header">
+          <div class="view-tabs" role="tablist" aria-label="Upload view">
+            <button type="button" class="view-tab active" id="viewTab-photos" role="tab">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+              Photos
+            </button>
+            <button type="button" class="view-tab" id="viewTab-activity" role="tab">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+              Activity
+            </button>
+          </div>
+          <div class="status-badges">
+            <span class="badge badge-success" id="badgeSuccess">0 uploaded</span>
+            <span class="badge badge-duplicate" id="badgeDuplicate">0 skipped</span>
+            <span class="badge badge-error" id="badgeError">0 failed</span>
+          </div>
+        </div>
+
+        <!-- Selection bar - visible on photos view when files are loaded -->
+        <div class="selection-bar" id="selectionBar" style="display:none">
+          <button type="button" class="btn-sel" id="selectAllBtn">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+            Select All
+          </button>
+          <button type="button" class="btn-sel" id="deselectAllBtn">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 13H5v-2h14v2z"/></svg>
+            Deselect All
+          </button>
+          <span class="sel-count" id="selCount"><strong>0</strong> of <strong>0</strong> selected</span>
+          <div class="grid-zoom-control" title="Grid thumbnail size">
+            <svg class="grid-zoom-ico" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 3h4v4H3V3zm6 0h4v4H9V3zm6 0h4v4h-4V3zM3 9h4v4H3V9zm6 0h4v4H9V9zm6 0h4v4h-4V9zM3 15h4v4H3v-4zm6 0h4v4H9v-4zm6 0h4v4h-4v-4zm6-12h4v4h-4V3zm0 6h4v4h-4V9zm0 6h4v4h-4v-4zm0 6h4v4h-4v-4z"/></svg>
+            <input type="range" id="gridZoomSlider" min="1" max="5" step="1" value="3" aria-label="Grid thumbnail size" />
+            <svg class="grid-zoom-ico" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 0h7v7h-7v-7z"/></svg>
+          </div>
+        </div>
+
+        <div class="upload-right-body">
+
+        <div class="progress-wrap" id="progressWrap" style="display:none">
+          <div class="progress-track">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+          <div class="progress-text">
+            <span id="progressLabel" class="truncate">No upload in progress</span>
+            <span id="progressPct"></span>
+          </div>
+          <div class="progress-text progress-meta">
+            <span id="progressSpeed" class="speed idle">—</span>
+            <span id="progressEta" class="eta"></span>
+          </div>
+        </div>
+
+        <div class="complete-banner" id="completeBanner">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="color:var(--success);flex-shrink:0"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+          <div class="complete-banner-text">
+            <strong id="bannerTitle">Upload Complete</strong>
+            <span id="bannerSub"></span>
+          </div>
+          <div class="complete-banner-actions">
+            <button type="button" class="retry-failed-btn" id="retryFailedBtn" style="display:none" title="Retry only files that failed">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+              Retry Failed
+            </button>
+            <button type="button" class="reset-btn" id="resetBtn" title="Clear the grid and start a new import">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+              Start New Import
+            </button>
+          </div>
+        </div>
+
+        <!-- Photos grid view -->
+        <div class="upload-view active" id="view-photos">
+          <div class="photo-grid-shell" id="photoGridShell">
+            <div class="photo-grid-scroll" id="photoGridScroll" tabindex="0" role="region" aria-label="Photos">
+              <div class="view-empty" id="photoEmpty">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                <p>Select a folder to view your photos</p>
+                <p class="hint">Thumbnails will appear here in a grid</p>
+              </div>
+              <div class="photo-grid-stack" id="photoGridStack" style="display:none">
+                <div id="photoTimelineAnchors" class="photo-timeline-anchors"></div>
+                <div class="photo-grid" id="photoGrid"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Activity log view -->
+        <div class="upload-view" id="view-activity">
+          <!-- Live log: only visible while an upload is running -->
+          <div class="log-scroll" id="logScroll" style="display:none; flex: 0 0 auto; max-height: 35%;">
+          </div>
+
+          <!-- Upload history -->
+          <div class="history-section" id="historySection">
+            <div class="history-section-title" id="historySectionTitle" style="display:none">
+              Upload History
+              <span id="historyCount" style="font-weight:500; color:var(--text-secondary); text-transform:none; letter-spacing:0;"></span>
+            </div>
+            <div class="history-empty" id="historyEmpty">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+              <p>Upload activity will appear here</p>
+              <p class="hint">Completed upload sessions will be listed here</p>
+            </div>
+            <div class="history-list" id="historyList" style="display:none"></div>
+          </div>
+
+          <div class="history-footer">
+            <button type="button" class="history-clear-btn" id="historyClearBtn" disabled>
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+              Clear History
+            </button>
+          </div>
+        </div>
+
+          <aside class="photo-details-pane" id="photoDetailsPane" aria-hidden="true" aria-live="polite">
+            <button type="button" id="photoDetailsCloseBtn" class="photo-details-close" aria-label="Close details panel" title="Close">×</button>
+            <div class="photo-details-inner">
+              <div class="photo-details-preview" id="photoDetailsPreview"></div>
+              <div class="photo-details-name" id="photoDetailsName"></div>
+              <hr class="photo-details-divider">
+              <dl class="photo-details-meta">
+                <dt>Size</dt><dd id="photoDetailsSize">—</dd>
+                <dt>Modified</dt><dd id="photoDetailsModified">—</dd>
+                <dt>Type</dt><dd id="photoDetailsType">—</dd>
+                <dt>Dimensions</dt><dd id="photoDetailsDimensions">—</dd>
+              </dl>
+              <hr class="photo-details-divider" id="photoDetailsDivider2" hidden>
+              <div class="photo-details-upload" id="photoDetailsUploadBlock" hidden>
+                <div class="photo-details-badge" id="photoDetailsUploadBadge"></div>
+                <div class="photo-details-errmsg" id="photoDetailsUploadError" hidden></div>
+              </div>
+            </div>
+          </aside>
+
+        </div><!-- .upload-right-body -->
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Left side navigation drawer -->
+<div class="drawer-overlay" id="sideDrawerOverlay"></div>
+<aside class="side-drawer" id="sideDrawer" aria-label="Main navigation">
+  <div class="side-drawer-header">
+    <div class="side-drawer-brand">
+      <div class="app-logo">
+        <svg viewBox="0 0 24 24">
+          <defs><linearGradient id="rlLogoSd" x1="15%" y1="10%" x2="85%" y2="95%"><stop offset="0%" stop-color="#7fb2ff"/><stop offset="100%" stop-color="#1d4fb8"/></linearGradient></defs>
+          <rect width="24" height="24" rx="6" fill="url(#rlLogoSd)"/>
+          <rect x="6.5" y="5" width="12" height="14" rx="2" fill="#fff"/>
+          <rect x="7.7" y="6.2" width="9.6" height="10.6" rx="1" fill="#cfe4ff"/>
+          <circle cx="9.8" cy="8.1" r="1" fill="#fff"/>
+          <path d="M7.7 15.4L11.2 10.6L13.5 13.6Z" fill="#6ea6ff"/>
+          <path d="M12.3 15.4L14.9 11.7L17.3 15.4Z" fill="#2f5fd0"/>
+        </svg>
+      </div>
+      <div class="side-drawer-brand-text">
+        <strong>ReelUp</strong>
+        <span>v1.0.0</span>
+      </div>
+    </div>
+  </div>
+
+  <nav class="side-drawer-nav">
+    <div class="side-drawer-section-title">Workspace</div>
+    <button type="button" class="nav-link active" id="navLink-upload">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+      <span>Upload</span>
+      <span class="nav-badge" id="navBadgeUpload"></span>
+    </button>
+  </nav>
+
+  <div class="side-drawer-footer">
+    <div class="theme-quick">
+      <span>Appearance</span>
+      <button type="button" class="theme-quick-btn" id="themeQuickBtn" title="Toggle theme">
+        <svg id="themeQuickIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M9.37 5.51c-.18.64-.27 1.31-.27 1.99 0 4.08 3.32 7.4 7.4 7.4.68 0 1.35-.09 1.99-.27C17.45 17.19 14.93 19 12 19c-3.86 0-7-3.14-7-7 0-2.93 1.81-5.45 4.37-6.49zM12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.4-9.6c-.44-.06-.9-.1-1.36-.1z"/></svg>
+        <span id="themeQuickLabel">Dark</span>
+      </button>
+    </div>
+    Photos, RAW &amp; video uploads<br>
+    to your configured services
+  </div>
+</aside>
+
+<!-- Settings drawer (right) -->
+<div class="drawer-overlay" id="settingsDrawerOverlay"></div>
+<aside class="settings-drawer" id="settingsDrawer" aria-label="Settings">
+
+  <div class="settings-drawer-header">
+    <div class="settings-drawer-title">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94 0 .31.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+      Settings
+    </div>
+    <button class="modal-close" id="settingsCloseBtn" title="Close">
+      <svg width="14" height="14" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 1l8 8M9 1L1 9"/></svg>
+    </button>
+  </div>
+
+  <div class="settings-scroll">
+
+    <!-- Appearance -->
+    <div class="settings-section" id="section-appearance">
+      <div class="settings-section-title">Appearance</div>
+      <div class="settings-hint" style="margin-bottom:12px">Choose how the app looks. Saved automatically.</div>
+      <div class="appearance-row-label">Palette</div>
+      <div class="palette-switch">
+        <div class="palette-option" id="paletteOpt-midnight" data-palette="midnight">
+          <div class="palette-swatch" aria-hidden="true">
+            <span style="background:#0b0d12"></span>
+            <span style="background:#13161e"></span>
+            <span style="background:#4f8ef7"></span>
+          </div>
+          <div class="palette-option-label">Midnight</div>
+        </div>
+        <div class="palette-option" id="paletteOpt-ember" data-palette="ember">
+          <div class="palette-swatch" aria-hidden="true">
+            <span style="background:#0f0d0b"></span>
+            <span style="background:#1a1612"></span>
+            <span style="background:#f59e0b"></span>
+          </div>
+          <div class="palette-option-label">Ember</div>
+        </div>
+        <div class="palette-option" id="paletteOpt-forest" data-palette="forest">
+          <div class="palette-swatch" aria-hidden="true">
+            <span style="background:#090e0c"></span>
+            <span style="background:#111a16"></span>
+            <span style="background:#10b981"></span>
+          </div>
+          <div class="palette-option-label">Forest</div>
+        </div>
+        <div class="palette-option" id="paletteOpt-dusk" data-palette="dusk">
+          <div class="palette-swatch" aria-hidden="true">
+            <span style="background:#0d0b14"></span>
+            <span style="background:#15121f"></span>
+            <span style="background:#a78bfa"></span>
+          </div>
+          <div class="palette-option-label">Dusk</div>
+        </div>
+      </div>
+      <div class="appearance-row-label">Mode</div>
+      <div class="theme-switch">
+        <div class="theme-option" id="themeOpt-dark">
+          <div class="theme-preview mode-dark">
+            <div class="preview-side">
+              <div class="preview-bar accent" style="width:60%"></div>
+              <div class="preview-bar" style="width:90%"></div>
+              <div class="preview-bar" style="width:40%"></div>
+            </div>
+          </div>
+          <div class="theme-option-label">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9.37 5.51c-.18.64-.27 1.31-.27 1.99 0 4.08 3.32 7.4 7.4 7.4.68 0 1.35-.09 1.99-.27C17.45 17.19 14.93 19 12 19c-3.86 0-7-3.14-7-7 0-2.93 1.81-5.45 4.37-6.49zM12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.4-9.6c-.44-.06-.9-.1-1.36-.1z"/></svg>
+            Dark
+          </div>
+        </div>
+        <div class="theme-option" id="themeOpt-light">
+          <div class="theme-preview mode-light">
+            <div class="preview-side">
+              <div class="preview-bar accent" style="width:60%"></div>
+              <div class="preview-bar" style="width:90%"></div>
+              <div class="preview-bar" style="width:40%"></div>
+            </div>
+          </div>
+          <div class="theme-option-label">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/></svg>
+            Light
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Services -->
+    <div class="settings-section" id="section-services">
+      <div class="settings-section-title">Services</div>
+      <div class="settings-hint" style="margin-bottom:12px">Configure upload destinations. Enable multiple services and choose one under <strong style="color:var(--text)">Upload To</strong> on the Upload tab.</div>
+
+      <div id="servicesListContainer" class="services-list"></div>
+
+      <button type="button" class="btn-add-service" id="addServiceBtn">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        Add Service
+      </button>
+    </div>
+
+    <!-- (Legacy Immich / SFTP sections removed — migrated into Services) -->
+    <div class="settings-section" id="section-about">
+      <div class="settings-section-title">About</div>
+      <div class="settings-hint" style="line-height:1.7">
+        ReelUp v1.0.0<br>
+        Supports NEF, CR2, CR3, ARW, DNG and all common image/video formats.<br>
+        Duplicate detection is automatic for supported destinations.
+      </div>
+      <button type="button" class="btn-relaunch-onboarding" id="relaunchOnboardingBtn">
+        Relaunch Setup
+      </button>
+    </div>
+
+  </div>
+
+  <div class="settings-footer">
+    <div class="save-confirm" id="saveConfirm">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+      Saved
+    </div>
+    <button class="btn-save" id="saveSettingsBtn">Save Settings</button>
+  </div>
+
+</aside>
+
+<!-- SFTP Remote Folder Browser Modal -->
+<div class="modal-overlay" id="sftpBrowserModal">
+  <div class="modal" role="dialog" aria-label="Browse remote folders">
+    <div class="modal-header">
+      <span class="modal-title">Browse Remote Folder</span>
+      <button class="modal-close" id="sftpBrowserCloseBtn" title="Close">
+        <svg width="14" height="14" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 1l8 8M9 1L1 9"/></svg>
+      </button>
+    </div>
+
+    <div class="modal-toolbar">
+      <button class="btn-input" id="browseUpBtn" title="Go up one folder">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9.71 18.29L8.29 16.88 13.17 12 8.29 7.12 9.71 5.71 16 12z" transform="rotate(-90 12 12)"/></svg>
+        Up
+      </button>
+      <button class="btn-input" id="browseHomeBtn" title="Go to login home">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+        Home
+      </button>
+      <div class="crumbs" id="browseCrumbs"></div>
+    </div>
+
+    <div class="new-folder-row" id="newFolderRow">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color:var(--accent);flex-shrink:0"><path d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-1 8h-3v3h-2v-3h-3v-2h3V9h2v3h3v2z"/></svg>
+      <input type="text" id="newFolderInput" placeholder="new-folder-name">
+      <button class="btn-modal primary" id="newFolderCreateBtn" style="padding:7px 14px;font-size:13px">Create</button>
+      <button class="btn-modal" id="newFolderCancelBtn" style="padding:7px 14px;font-size:13px">Cancel</button>
+    </div>
+
+    <div class="modal-body" id="browseBody">
+      <div class="dir-state" id="browseState">Loading…</div>
+      <div class="dir-list" id="browseList" style="display:none"></div>
+    </div>
+
+    <div class="modal-footer">
+      <div class="selected-path">
+        <strong>Selected</strong>
+        <span id="browseSelected">/</span>
+      </div>
+      <button class="btn-modal" id="newFolderToggleBtn" title="Create a folder here">+ New Folder</button>
+      <button class="btn-modal" id="sftpBrowserFooterCancelBtn">Cancel</button>
+      <button class="btn-modal primary" id="sftpBrowserSelectBtn">Select Folder</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add service type picker -->
+<div class="modal-overlay" id="addServiceModal">
+  <div class="modal add-service-modal" role="dialog" aria-label="Add service">
+    <div class="modal-header">
+      <span class="modal-title">Add Service</span>
+      <button class="modal-close" id="addServiceModalCloseBtn" title="Close">
+        <svg width="14" height="14" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 1l8 8M9 1L1 9"/></svg>
+      </button>
+    </div>
+    <div class="modal-body add-service-grid">
+      <button type="button" class="add-service-option" id="addServiceImmichBtn">
+        <span class="aso-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg></span>
+        <span class="aso-label">Immich API</span>
+      </button>
+      <button type="button" class="add-service-option" id="addServiceSftpBtn">
+        <span class="aso-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 6h-2.18c.11-.31.18-.65.18-1a2.996 2.996 0 0 0-5.5-1.65l-.5.67-.5-.68C11.01 2.51 10.03 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2z"/></svg></span>
+        <span class="aso-label">SFTP / SSH</span>
+      </button>
+      <button type="button" class="add-service-option" id="addServiceNextcloudBtn">
+        <span class="aso-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg></span>
+        <span class="aso-label">Nextcloud (WebDAV)</span>
+      </button>
+      <button type="button" class="add-service-option" id="addServiceDropboxBtn">
+        <span class="aso-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 2l6 3.75L18 2 24 5.75 18 9.5l-6-3.5L6 9.5 0 5.75zm12 10.25L24 16 18 19.75 12 16.25 6 20 0 16.25l6-3.5 6 3.5 6-3.75z"/></svg></span>
+        <span class="aso-label">Dropbox</span>
+      </button>
+      <button type="button" class="add-service-option" id="addServiceLocalBtn">
+        <span class="aso-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 18c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z"/></svg></span>
+        <span class="aso-label">Local folder</span>
+      </button>
+      <button type="button" class="add-service-option is-disabled" disabled title="Coming soon">
+        <span class="aso-label">Google Photos</span>
+        <span class="aso-badge">Coming soon</span>
+      </button>
+      <button type="button" class="add-service-option is-disabled" disabled title="Coming soon">
+        <span class="aso-label">OneDrive</span>
+        <span class="aso-badge">Coming soon</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Generic confirm dialog — replaces native confirm() so destructive actions
+     (remove service, clear history) get the same custom-modal look as the
+     rest of the app instead of a blocking OS dialog. -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal" role="alertdialog" aria-label="Confirm" aria-modal="true">
+    <div class="modal-header">
+      <span class="modal-title">Confirm</span>
+    </div>
+    <div class="modal-body">
+      <p id="confirmModalMessage" style="margin:0;"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-modal" id="confirmModalCancelBtn">Cancel</button>
+      <button class="btn-modal primary" id="confirmModalOkBtn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Fullscreen preview (double-click a tile) -->
+<div id="photoLightbox" class="photo-lightbox" hidden role="dialog" aria-modal="true" aria-label="Photo preview">
+  <div class="photo-lightbox-dismiss" id="photoLightboxBackdrop"></div>
+  <button type="button" class="photo-lightbox-close" id="photoLightboxClose" aria-label="Close">×</button>
+  <button type="button" class="photo-lightbox-nav photo-lightbox-prev" id="photoLightboxPrev" aria-label="Previous photo">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+  </button>
+  <button type="button" class="photo-lightbox-nav photo-lightbox-next" id="photoLightboxNext" aria-label="Next photo">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8.59 16.59 10 18l6-6-6-6-1.41 1.41L13.17 12z"/></svg>
+  </button>
+  <div class="photo-lightbox-main">
+    <div class="photo-lightbox-img-stage" id="photoLightboxStage">
+      <div class="photo-lightbox-spinner" id="photoLightboxSpinner" hidden>
+        <svg class="scan-spinner" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4V2A10 10 0 0 0 2 12h2a8 8 0 0 1 8-8z"/></svg>
+      </div>
+      <div class="photo-lightbox-img-stack" id="photoLightboxImgStack">
+        <img id="photoLightboxImg" alt="" class="photo-lightbox-img-base" />
+        <img id="photoLightboxImgHi" alt="" class="photo-lightbox-img-hi" hidden aria-hidden="true" />
+      </div>
+    </div>
+  </div>
+  <div class="photo-lightbox-footer">
+    <div class="photo-lightbox-title" id="photoLightboxFileName"></div>
+    <div class="photo-lightbox-meta" id="photoLightboxMeta"></div>
+  </div>
+</div>
+
+<script src="renderer/state-and-chrome.js"></script>
+<script src="renderer/services-settings.js"></script>
+<script src="renderer/photo-grid.js"></script>
+<script src="renderer/upload.js"></script>
+<script src="renderer/history-and-utils.js"></script>
+<script src="renderer/sftp-browser.js"></script>
+<script src="renderer/init.js"></script>
+</body>
+</html>
