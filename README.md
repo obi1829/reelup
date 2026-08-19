@@ -27,6 +27,18 @@ to Immich, SFTP, Nextcloud (WebDAV), Dropbox, or a local folder.
 
 ---
 
+## Download
+
+Grab the latest release from **[GitHub Releases](https://github.com/obi1829/reelup/releases/latest)** — no need to install Node.js or build anything:
+
+- **Portable** (`ReelUp x.x.x.exe`) — single file, just run it
+- **Installer** (`ReelUp Setup x.x.x.exe`) — installs with a Start Menu shortcut and uninstaller
+
+> Builds aren't code-signed, so Windows SmartScreen may warn on first launch — see the
+> note under [Build a Standalone .exe](#build-a-standalone-exe) below.
+
+---
+
 ## Setup (Development / Run from source)
 
 ### Requirements
